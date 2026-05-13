@@ -1,0 +1,5 @@
+package com.jobportal.saved_jobs_service.dto;
+
+public record JobSeekerProfileDto(int userAccountId, String firstName, String lastName,
+                                  String city, String state, String country,
+                                  String photosImagePath) {}
