@@ -18,6 +18,10 @@ public class WebSecurityConfig {
 
         http.authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .logout(logout -> {
+                	logout.logoutUrl("/logout");
+                	logout.logoutSuccessUrl("/");
+                })
                 .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable());
 

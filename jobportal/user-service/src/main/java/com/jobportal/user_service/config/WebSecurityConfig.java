@@ -76,7 +76,22 @@ public class WebSecurityConfig {
                             jwtCookie.setMaxAge(0);
                             response.addCookie(jwtCookie);
                         })
-                        .logoutSuccessUrl("/")
+                        .logoutSuccessHandler((request, response, authentication) -> {
+                            // Redirect back to the gateway port, not user-service port
+                            String forwardedHost = request.getHeader("X-Forwarded-Host");
+                            String forwardedProto = request.getHeader("X-Forwarded-Proto");
+                            String forwardedPort = request.getHeader("X-Forwarded-Port");
+                            String host;
+                            if (forwardedHost != null && !forwardedHost.isEmpty()) {
+                                host = forwardedHost.split(",")[0].trim();
+                                if (host.contains(":")) host = host.substring(0, host.lastIndexOf(":"));
+                            } else {
+                                host = "localhost";
+                            }
+                            String proto = (forwardedProto != null && !forwardedProto.isEmpty()) ? forwardedProto.split(",")[0].trim() : "http";
+                            String port = (forwardedPort != null && !forwardedPort.isEmpty()) ? forwardedPort.split(",")[0].trim() : "8080";
+                            response.sendRedirect(proto + "://" + host + ":" + port + "/");
+                        })
                         .permitAll())
                 .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable());

@@ -50,8 +50,21 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
             jwtCookie.setMaxAge(86400); // 1 day in seconds
             response.addCookie(jwtCookie);
 
-            // Redirect to gateway
-            String redirectUrl = "http://" + request.getServerName() + ":8080/dashboard";
+            // Build redirect URL using X-Forwarded-Host so it matches the browser's
+            // original host (e.g. localhost or machine-name), avoiding cookie domain mismatch
+            String forwardedHost = request.getHeader("X-Forwarded-Host");
+            String forwardedProto = request.getHeader("X-Forwarded-Proto");
+            String forwardedPort = request.getHeader("X-Forwarded-Port");
+            String host;
+            if (forwardedHost != null && !forwardedHost.isEmpty()) {
+                host = forwardedHost.split(",")[0].trim();
+                if (host.contains(":")) host = host.substring(0, host.lastIndexOf(":"));
+            } else {
+                host = "localhost";
+            }
+            String proto = (forwardedProto != null && !forwardedProto.isEmpty()) ? forwardedProto.split(",")[0].trim() : "http";
+            String port = (forwardedPort != null && !forwardedPort.isEmpty()) ? forwardedPort.split(",")[0].trim() : "8080";
+            String redirectUrl = proto + "://" + host + ":" + port + "/dashboard";
             response.sendRedirect(redirectUrl);
         }
     }

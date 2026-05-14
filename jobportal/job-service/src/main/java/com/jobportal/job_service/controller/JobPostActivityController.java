@@ -11,6 +11,7 @@ import com.jobportal.job_service.feign.client.RecruiterServiceClient;
 import com.jobportal.job_service.feign.client.SavedJobsServiceClient;
 import com.jobportal.job_service.feign.client.UserServiceClient;
 import com.jobportal.job_service.services.JobPostActivityService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -213,7 +214,7 @@ public class JobPostActivityController {
     }
 
     @PostMapping("/dashboard/addNew")
-    public String addNew(JobPostActivity jobPostActivity) {
+    public String addNew(JobPostActivity jobPostActivity, HttpServletRequest request) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (!(auth instanceof AnonymousAuthenticationToken)) {
             UserDto userDto = userServiceClient.getUserByEmail(auth.getName());
@@ -221,7 +222,7 @@ public class JobPostActivityController {
         }
         jobPostActivity.setPostedDate(new Date());
         jobPostActivityService.addNew(jobPostActivity);
-        return "redirect:/dashboard/";
+        return buildGatewayRedirectUrl(request, "dashboard/");
     }
 
     @PostMapping("dashboard/edit/{id}")
@@ -235,5 +236,19 @@ public class JobPostActivityController {
                 model.addAttribute("user", recruiterServiceClient.getRecruiterProfile(userDto.userId()));
         }
         return "add-jobs";
+    }
+
+    private String buildGatewayRedirectUrl(HttpServletRequest request, String path) {
+        String forwardedHost = request.getHeader("X-Forwarded-Host");
+        String forwardedProto = request.getHeader("X-Forwarded-Proto");
+        String host;
+        if (forwardedHost != null && !forwardedHost.isEmpty()) {
+            host = forwardedHost.split(",")[0].trim();
+            if (host.contains(":")) host = host.substring(0, host.lastIndexOf(":"));
+        } else {
+            host = "localhost";
+        }
+        String proto = (forwardedProto != null && !forwardedProto.isEmpty()) ? forwardedProto.split(",")[0].trim() : "http";
+        return "redirect:" + proto + "://" + host + ":8080/" + path;
     }
 }
