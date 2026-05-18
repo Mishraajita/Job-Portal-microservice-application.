@@ -11,7 +11,8 @@ public record JobDto(
         Date postedDate,
         String descriptionOfJob,
         LocationDto jobLocationId,
-        CompanyDto jobCompanyId
+        CompanyDto jobCompanyId, 
+        Boolean isActive
 ) {
     public record LocationDto(Integer id, String city, String state, String country) {}
     public record CompanyDto(Integer id, String name) {}

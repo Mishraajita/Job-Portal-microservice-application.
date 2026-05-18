@@ -212,6 +212,12 @@ public class JobPostActivityController {
         }
         return "add-jobs";
     }
+    
+    @PostMapping("/dashboard/deleteJob/{id}")
+    public String deleteJob(@PathVariable("id") int id, HttpServletRequest request) {
+        jobPostActivityService.deleteById(id);
+        return buildGatewayRedirectUrl(request, "dashboard/");
+    }
 
     @PostMapping("/dashboard/addNew")
     public String addNew(JobPostActivity jobPostActivity, HttpServletRequest request) {

@@ -40,7 +40,8 @@ public class JobRestController {
                 job.getJobCompanyId() != null
                         ? new JobDto.CompanyDto(job.getJobCompanyId().getId(),
                                 job.getJobCompanyId().getName())
-                        : null
+                        : null,
+                job.getIsActive()        
         );
         return ResponseEntity.ok(dto);
     }

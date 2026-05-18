@@ -12,4 +12,6 @@ public interface JobSeekerApplyRepository extends JpaRepository<JobSeekerApply, 
     List<JobSeekerApply> findByUserId(Integer userId);
 
     List<JobSeekerApply> findByJobId(Integer jobId);
+
+	boolean existsByUserIdAndJobId(Integer userId, Integer jobId);
 }

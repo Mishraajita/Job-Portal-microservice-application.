@@ -41,7 +41,7 @@ public class UsersController {
     }
 
     @PostMapping("/register/new")
-    public String userRegistration(@Valid Users users,Model model){
+    public String userRegistration(@Valid Users users, Model model, HttpServletRequest request){
 
         Optional<Users> optionalUsers=usersService.getUserByEmail(users.getEmail());
 
@@ -54,7 +54,21 @@ public class UsersController {
         }
         //System.out.println("User:: "+users);
         usersService.addNew(users);
-        return "redirect:/dashboard/";
+        return buildGatewayRedirectUrl(request, "login");
+    }
+
+    private String buildGatewayRedirectUrl(HttpServletRequest request, String path) {
+        String forwardedHost = request.getHeader("X-Forwarded-Host");
+        String forwardedProto = request.getHeader("X-Forwarded-Proto");
+        String host;
+        if (forwardedHost != null && !forwardedHost.isEmpty()) {
+            host = forwardedHost.split(",")[0].trim();
+            if (host.contains(":")) host = host.substring(0, host.lastIndexOf(":"));
+        } else {
+            host = "localhost";
+        }
+        String proto = (forwardedProto != null && !forwardedProto.isEmpty()) ? forwardedProto.split(",")[0].trim() : "http";
+        return "redirect:" + proto + "://" + host + ":8080/" + path;
     }
 
     @GetMapping("/login")

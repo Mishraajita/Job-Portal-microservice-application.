@@ -26,4 +26,8 @@ public class JobSeekerSaveService {
     public void addNew(JobSeekerSave jobSeekerSave) {
         jobSeekerSaveRepository.save(jobSeekerSave);
     }
+
+	public boolean isAlreadySaved(Integer userId, Integer jobId) {
+		return jobSeekerSaveRepository.existsByUserIdAndJobId(userId, jobId);
+	}
 }

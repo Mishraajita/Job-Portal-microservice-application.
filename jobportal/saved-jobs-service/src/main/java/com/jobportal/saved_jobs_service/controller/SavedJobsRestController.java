@@ -26,4 +26,9 @@ public class SavedJobsRestController {
                 .map(JobSeekerSave::getJobId)
                 .collect(Collectors.toList());
     }
+    
+    @GetMapping("/check/{userId}/{jobId}")
+    public boolean isAlreadySaved(@PathVariable("userId") int userId, @PathVariable("jobId") int jobId) {
+        return jobSeekerSaveService.isAlreadySaved(userId, jobId);
+    }
 }

@@ -5,6 +5,7 @@ import com.jobportal.job_service.entity.JobCompany;
 import com.jobportal.job_service.entity.JobLocation;
 import com.jobportal.job_service.entity.JobPostActivity;
 import com.jobportal.job_service.entity.RecruiterJobsDto;
+import com.jobportal.job_service.feign.client.ApplicationServiceClient;
 import com.jobportal.job_service.repository.JobPostActivityRepository;
 import org.springframework.stereotype.Service;
 
@@ -17,9 +18,12 @@ import java.util.Objects;
 public class JobPostActivityService {
 
     private final JobPostActivityRepository jobPostActivityRepository;
+    private final ApplicationServiceClient applicationServiceClient;
 
-    public JobPostActivityService(JobPostActivityRepository jobPostActivityRepository) {
+    public JobPostActivityService(JobPostActivityRepository jobPostActivityRepository,
+                                  ApplicationServiceClient applicationServiceClient) {
         this.jobPostActivityRepository = jobPostActivityRepository;
+        this.applicationServiceClient = applicationServiceClient;
     }
 
     public JobPostActivity addNew(JobPostActivity jobPostActivity) {
@@ -32,7 +36,8 @@ public class JobPostActivityService {
         for (IRecruiterJobs rec : recruiterJobsDtos) {
             JobLocation loc = new JobLocation(rec.getLocationId(), rec.getCity(), rec.getState(), rec.getCountry());
             JobCompany comp = new JobCompany(rec.getCompanyId(), rec.getName(), "");
-            recruiterJobsDtoList.add(new RecruiterJobsDto(rec.getTotalCandidates(), rec.getJob_post_id(),
+            long count = applicationServiceClient.getApplicationsByJob(rec.getJob_post_id()).size();
+            recruiterJobsDtoList.add(new RecruiterJobsDto(count, rec.getJob_post_id(),
                     rec.getJob_title(), loc, comp));
         }
         return recruiterJobsDtoList;
@@ -40,6 +45,10 @@ public class JobPostActivityService {
 
     public JobPostActivity getOne(int id) {
         return jobPostActivityRepository.findById(id).orElseThrow(() -> new RuntimeException("Job not found"));
+    }
+
+    public void deleteById(int id) {
+        jobPostActivityRepository.deleteById(id);
     }
 
     public List<JobPostActivity> getAll() {

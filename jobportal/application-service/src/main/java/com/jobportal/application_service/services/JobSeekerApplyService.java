@@ -28,4 +28,8 @@ public class JobSeekerApplyService {
     public void addNew(JobSeekerApply jobSeekerApply) {
         jobSeekerApplyRepository.save(jobSeekerApply);
     }
+
+	public boolean isAlreadyApplied(Integer userId, Integer jobId) {
+		return jobSeekerApplyRepository.existsByUserIdAndJobId(userId, jobId);
+	}
 }

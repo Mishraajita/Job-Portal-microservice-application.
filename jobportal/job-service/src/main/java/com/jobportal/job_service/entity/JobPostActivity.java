@@ -63,7 +63,7 @@ public class JobPostActivity {
         return jobPostId;
     }
 
-    public void setJobPosted(Integer jobPostId) {
+    public void setJobPostId(Integer jobPostId) {
         this.jobPostId = jobPostId;
     }
 

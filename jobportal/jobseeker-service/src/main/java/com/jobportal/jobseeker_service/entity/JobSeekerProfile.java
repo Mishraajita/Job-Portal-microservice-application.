@@ -2,6 +2,7 @@ package com.jobportal.jobseeker_service.entity;
 
 import jakarta.persistence.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -24,7 +25,8 @@ public class JobSeekerProfile {
     private String profilePhoto;
 
     @OneToMany(targetEntity = Skills.class, cascade = CascadeType.ALL, mappedBy = "jobSeekerProfile")
-    private List<Skills> skills;
+    // When a job seeker submits the form without clicking "Add Skill", Spring MVC doesn't bind anything to skills, leaving it null — which causes the NPE when the controller iterates over it. That is why initialize with empty array list.
+    private List<Skills> skills = new ArrayList<>();
 
     public JobSeekerProfile() {
     }

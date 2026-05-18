@@ -7,6 +7,7 @@ import com.jobportal.jobseeker_service.feign.client.UserServiceClient;
 import com.jobportal.jobseeker_service.services.JobSeekerProfileService;
 import com.jobportal.jobseeker_service.util.FileDownloadUtil;
 import com.jobportal.jobseeker_service.util.FileUploadUtil;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -69,9 +70,10 @@ public class JobSeekerProfileController {
 
     @PostMapping("/addNew")
     public String addNew(JobSeekerProfile jobSeekerProfile,
-                         @RequestParam("image") MultipartFile image,
-                         @RequestParam("pdf") MultipartFile pdf,
-                         Model model) {
+                         @RequestParam(value = "image", required = false) MultipartFile image,
+                         @RequestParam(value = "pdf", required = false) MultipartFile pdf,
+                         Model model,
+                         HttpServletRequest request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (!(authentication instanceof AnonymousAuthenticationToken)) {
             UserDto userDto = userServiceClient.getUserByEmail(authentication.getName());
@@ -90,11 +92,11 @@ public class JobSeekerProfileController {
         String imageName = "";
         String resumeName = "";
 
-        if (!Objects.equals(image.getOriginalFilename(), "")) {
+        if (image != null && !Objects.equals(image.getOriginalFilename(), "")) {
             imageName = StringUtils.cleanPath(Objects.requireNonNull(image.getOriginalFilename()));
             jobSeekerProfile.setProfilePhoto(imageName);
         }
-        if (!Objects.equals(pdf.getOriginalFilename(), "")) {
+        if (pdf != null && !Objects.equals(pdf.getOriginalFilename(), "")) {
             resumeName = StringUtils.cleanPath(Objects.requireNonNull(pdf.getOriginalFilename()));
             jobSeekerProfile.setResume(resumeName);
         }
@@ -103,15 +105,15 @@ public class JobSeekerProfileController {
 
         try {
             String uploadDir = "photos/candidate/" + jobSeekerProfile.getUserAccountId();
-            if (!Objects.equals(image.getOriginalFilename(), ""))
+            if (image != null && !Objects.equals(image.getOriginalFilename(), ""))
                 FileUploadUtil.saveFile(uploadDir, imageName, image);
-            if (!Objects.equals(pdf.getOriginalFilename(), ""))
+            if (pdf != null && !Objects.equals(pdf.getOriginalFilename(), ""))
                 FileUploadUtil.saveFile(uploadDir, resumeName, pdf);
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
 
-        return "redirect:/dashboard/";
+        return buildGatewayRedirectUrl(request, "dashboard/");
     }
 
     @GetMapping("/{id}")
@@ -139,4 +141,18 @@ public class JobSeekerProfileController {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + resource.getFilename() + "\"")
                 .body(resource);
     }
-}
+
+    private String buildGatewayRedirectUrl(HttpServletRequest request, String path) {
+        String forwardedHost = request.getHeader("X-Forwarded-Host");
+        String forwardedProto = request.getHeader("X-Forwarded-Proto");
+        String host;
+        if (forwardedHost != null && !forwardedHost.isEmpty()) {
+            host = forwardedHost.split(",")[0].trim();
+            if (host.contains(":")) host = host.substring(0, host.lastIndexOf(":"));
+        } else {
+            host = "localhost";
+        }
+        String proto = (forwardedProto != null && !forwardedProto.isEmpty()) ? forwardedProto.split(",")[0].trim() : "http";
+        return "redirect:" + proto + "://" + host + ":8080/" + path;
+    }
+}    

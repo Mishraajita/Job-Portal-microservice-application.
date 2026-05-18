@@ -8,6 +8,7 @@ import com.jobportal.saved_jobs_service.feign.client.JobServiceClient;
 import com.jobportal.saved_jobs_service.feign.client.JobSeekerServiceClient;
 import com.jobportal.saved_jobs_service.feign.client.UserServiceClient;
 import com.jobportal.saved_jobs_service.services.JobSeekerSaveService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -39,17 +40,21 @@ public class JobSeekerSaveController {
     }
 
     @PostMapping("job-details/save/{id}")
-    public String save(@PathVariable("id") int id, JobSeekerSave jobSeekerSave) {
+//    public String save(@PathVariable("id") int id, JobSeekerSave jobSeekerSave) { }
+    public String save(@PathVariable("id") int id, HttpServletRequest request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (!(authentication instanceof AnonymousAuthenticationToken)) {
             UserDto userDto = userServiceClient.getUserByEmail(authentication.getName());
             if (userDto != null) {
+                JobSeekerSave jobSeekerSave = new JobSeekerSave();    // for issue : Row was already updated or deleted by another transaction for entity [com.jobportal.saved_jobs_service.entity.JobSeekerSave with id '2']
                 jobSeekerSave.setJobId(id);
                 jobSeekerSave.setUserId(userDto.userId());
-                jobSeekerSaveService.addNew(jobSeekerSave);
+                if(!jobSeekerSaveService.isAlreadySaved(userDto.userId(), id)) {
+                	jobSeekerSaveService.addNew(jobSeekerSave);
+                }
             }
         }
-        return "redirect:/dashboard/";
+        return buildGatewayRedirectUrl(request, "dashboard/");
     }
 
     @GetMapping("saved-jobs/")
@@ -75,5 +80,18 @@ public class JobSeekerSaveController {
         model.addAttribute("user", profile);
         return "saved-jobs";
     }
-}
 
+     private String buildGatewayRedirectUrl(HttpServletRequest request, String path) {
+        String forwardedHost = request.getHeader("X-Forwarded-Host");
+        String forwardedProto = request.getHeader("X-Forwarded-Proto");
+        String host;
+        if (forwardedHost != null && !forwardedHost.isEmpty()) {
+            host = forwardedHost.split(",")[0].trim();
+            if (host.contains(":")) host = host.substring(0, host.lastIndexOf(":"));
+        } else {
+            host = "localhost";
+        }
+        String proto = (forwardedProto != null && !forwardedProto.isEmpty()) ? forwardedProto.split(",")[0].trim() : "http";
+        return "redirect:" + proto + "://" + host + ":8080/" + path;
+    }
+}
